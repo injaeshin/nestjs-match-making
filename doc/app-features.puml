@@ -1,0 +1,38 @@
+@startuml app features
+group web login
+Client -> Server : [API] 로그인
+
+alt 사용자 정보 조회
+Server -> Redis  : 사용자 정보 요청
+Redis  -> Server : 요청 정보 반환
+else 사용자 정보 없음
+Server -> Redis  : 사용자 정보 생성
+Redis  -> Server : 결과 반환
+end
+
+Server -> Server : jwt 토큰 생성
+Server -> Client : 사용자 정보와\n 토큰 반환
+end
+
+group websocket 연결
+Client -> Server : websocket 연결
+Server -> Server : 토큰 검증
+Server -> Server : 사용자 정보 조회
+Server -> Client : 사용자 정보 반환
+end
+
+group 매칭
+Client -> Server : 매칭 요청
+Server -> Server : 사용자 정보 조회
+Server -> Server : 매치 큐 등록
+Server -> Client : 등록 완료 반환
+
+loop 매칭 진행
+Server -> Redis  : 매칭 대상 조회
+Server -> Server : 매칭 성공/실패
+end
+
+Server --> Client : 매칭 결과 반환
+end
+
+@enduml

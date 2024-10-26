@@ -1,0 +1,37 @@
+@startuml match-queue-bot
+actor User
+participant "WebSocket" as WS
+participant "Auth Service" as AS
+participant "Match Service" as MS
+participant "Match Queue" as MQ
+participant "Match Processor" as MP
+participant "Event" as EV
+
+User -> WS: 웹 소켓 연결
+WS -> AS: 토큰 검증
+AS -> WS: 검증 결과 반환
+
+WS -> MS: 매칭 요청
+MS -> MQ: 요청을 큐에 추가
+MQ -> MP: 요청을 가져옴
+
+loop 최대 3회
+    MP -> MP: 매칭 대기 중인 사용자 확인
+    alt 대기중인 사용자가 다수인 경우
+        MP -> MP: 무작위 선정
+    else 검색 결과 없음
+        MP -> MP: 3초 대기 후 재 검색
+    end
+end
+
+alt 매칭 성공
+    MP -> EV: 매칭 성공 알림
+    EV -> User: 매칭 성공 알림 전송
+else 매칭 실패
+    MP -> MQ: 일정 시간 후 재시도
+end
+
+alt 3회 진행 후 검색 결과가 없다면 봇 검색으로 변경
+    MP -> MQ: 봇 매칭으로 전환
+end
+@enduml

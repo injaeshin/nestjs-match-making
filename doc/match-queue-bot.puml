@@ -1,0 +1,33 @@
+@startuml match-queue-bot
+actor User
+participant "WebSocket" as WS
+participant "Auth Service" as AS
+participant "Match Service" as MS
+participant "Match Queue" as MQ
+participant "Match Processor" as MP
+participant "Event" as EV
+
+User -> WS: 웹 소켓 연결
+WS -> AS: 토큰 검증
+AS -> WS: 검증 결과 반환
+
+WS -> MS: 봇 검색 요청
+MS -> MQ: 요청을 큐에 추가
+MQ -> MP: 요청을 가져옴
+
+loop 최대 3회
+    MP -> MP: 내 점수 데이터를 기반으로 사용자 검색
+    MP -> MP: 점수 -50 ~ +50 으로 대상 검색
+    alt 검색 조건에 포함되는 사용자가 없는 경우
+        MP -> MP: +- 50 증가하여 추가 검색
+    end
+end
+
+alt 검색 성공
+    MP -> EV: 봇 정보 반환
+    EV -> User: 봇 정보 반환
+else 검색 실패
+    MP -> EV: 검색 실패 반환
+    EV -> User: 검색 실패 반환
+end
+@enduml
